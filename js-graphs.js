@@ -1,5 +1,6 @@
 import { Edge } from "./classes/Edge";
 import { Node } from "./classes/Node";
+import { _ } from "lodash";
 
 export class Graphs {
     /**
@@ -81,8 +82,13 @@ export class Graphs {
     getNeighbors(node) {
         const nodes = [];
         this.edges.forEach((edge) => {
-            if (node.value == edge.source.value) nodes.push(edge.target);
-            else if (node.value == edge.target.value) nodes.push(edge.source);
+            if (node.value == edge.source.value) {
+                edge.target.edgeValue = edge.value;
+                nodes.push(edge.target);
+            } else if (node.value == edge.target.value) {
+                edge.target.edgeValue = edge.value;
+                nodes.push(edge.source);
+            }
         });
         return nodes;
     }
@@ -158,12 +164,38 @@ export class Graphs {
     /**
      * @public
      * Retorna o caminho mínimo entre um vértice até todos os outros
-     * @param {Node} node
+     * @param {Node} source
+     * @param {Node} target
      * @returns {Array} com vértices e suas respectivas distâncias
      * @memberof Graphs
      */
-    getMinimumPath(node) {
-        return nodes;
+    getMinimumPath(source, target) {
+        let visited = [source],
+            path = [];
+
+        const _search = (src) => {
+            let neighbords = this.getNeighbors(src);
+
+            neighbords = neighbords.filter(
+                (neighbor) => !_.find(visited, { value: neighbor.value })
+            );
+
+            const node = _.find(path, { value: target.value });
+            if (!node) {
+                src = _.minBy(neighbords, "edgeValue");
+                path.push(src);
+                visited.push(src);
+                return _search(src);
+            } else {
+                const value = path.reduce((r, edge) => {
+                    r += edge.edgeValue;
+                    return r;
+                }, 0);
+                return { value, path };
+            }
+        };
+
+        return _search(source);
     }
 
     /**

@@ -1,3 +1,7 @@
+Npm.depends({
+    lodash: "4.17.11"
+});
+
 Package.describe({
     name: "brunomarram:js-graphs",
     version: "0.0.1",
