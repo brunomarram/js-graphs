@@ -239,6 +239,17 @@ export class Graphs {
      * @memberof Graphs
      */
     getIndependentSet() {
+        let visited = [];
+        const nodes = [];
+
+        this.nodes.forEach((node) => {
+            if (!_.find(visited, { value: node.value })) {
+                visited.push(node);
+                nodes.push(node);
+                visited = visited.concat(this.getNeighbors(node));
+            }
+        });
+
         return nodes;
     }
 }
