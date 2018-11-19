@@ -72,6 +72,10 @@ export class Graphs {
         return this.edges.length;
     }
 
+    _copy(obj) {
+        return JSON.parse(JSON.stringify(obj));
+    }
+
     /**
      * @public
      * Retorna os vizinhos de um vértice
@@ -81,12 +85,15 @@ export class Graphs {
      */
     getNeighbors(node) {
         const nodes = [];
+        if (!node) return nodes;
+
         this.edges.forEach((edge) => {
+            edge = this._copy(edge);
             if (node.value == edge.source.value) {
                 edge.target.edgeValue = edge.value;
                 nodes.push(edge.target);
             } else if (node.value == edge.target.value) {
-                edge.target.edgeValue = edge.value;
+                edge.source.edgeValue = edge.value;
                 nodes.push(edge.source);
             }
         });
@@ -171,7 +178,7 @@ export class Graphs {
      */
     getMinimumPath(source, target) {
         let visited = [source],
-            path = [];
+            path = { value: 0, path: [] };
 
         const _search = (src) => {
             let neighbords = this.getNeighbors(src);
@@ -180,18 +187,17 @@ export class Graphs {
                 (neighbor) => !_.find(visited, { value: neighbor.value })
             );
 
-            const node = _.find(path, { value: target.value });
+            let node = _.find(path.path, { value: target.value });
+
+            // se ainda sim não encontrar, procura pelo menor caminho conhecido
             if (!node) {
                 src = _.minBy(neighbords, "edgeValue");
-                path.push(src);
+                path.value += src.edgeValue;
+                path.path.push(src);
                 visited.push(src);
                 return _search(src);
             } else {
-                const value = path.reduce((r, edge) => {
-                    r += edge.edgeValue;
-                    return r;
-                }, 0);
-                return { value, path };
+                return path;
             }
         };
 
@@ -225,11 +231,19 @@ export class Graphs {
      * @memberof Graphs
      */
     isEurelian() {
-        let isEurelian = true;
+        const visited = [];
+
         this.nodes.forEach((node) => {
-            if (this.getDegree(node) % 2 != 0) isEurelian = false;
+            const neighbords = this.getNeighbors(node);
+            if (this.getDegree(node) % 2 != 0) return null;
+
+            neighbords.forEach((neighbor) => {
+                neighbor.from = node.value;
+                visited.push(neighbor);
+            });
         });
-        return isEurelian;
+
+        return visited;
     }
 
     /**
