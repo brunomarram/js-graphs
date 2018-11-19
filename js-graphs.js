@@ -39,7 +39,13 @@ export class Graphs {
         });
         return found;
     }
-
+    removeNode(value) {
+        for (var i = 0; i < this.nodes.length; i++) {
+            if(this.nodes[i].value != value){
+                this.nodes = this.nodes.slice(i, 1);
+            }
+        }
+    }
     /**
      * @public
      * Adiciona uma aresta ao grafo
@@ -158,7 +164,53 @@ export class Graphs {
      * @memberof Graphs
      */
     numberOfRelatedComponents() {
-        return 1;
+        let visited = [];
+        const possibleNodes = [];
+
+        let visitedLenght = 0;
+        let possibleLenght = 0;
+        let numberOfRelatedComponents = 0;
+
+        //Enquanto o numero de nós visitados for menos que a ordem do grafo
+        while(visitedLenght < this.getOrder()){
+            numberOfRelatedComponents++;
+
+            //encontra o primeiro nó que n foi visitado e o adiciona aos nós que podem ser explorados
+            for (var i = 0; i < this.getOrder(); i++) {
+                if(!_.find(visited, {value : this.nodes[i].value })){
+                    possibleNodes.push(this.nodes[i]);
+                    //Só pode ter um nó a ser explorado por vez, seus vizinhos serão adicionados
+                    break;
+                }
+           }
+            //para cada nó que pode ser explorado visitar todos seus vizinhos, e vizinhos de vizinhos etc
+            //até não ser mais possivel, então passa para a proxima iteração do while, e Verifica se visitou
+            //o mesmo numero de nós do grafo por completo
+            for (var node in possibleNodes) {
+                console.log(`oi`);
+                //se ele não foi visitado
+                if (!_.find(visited, { value: node.value })) {
+                    //adiciona os vizinhos dele aos possiveis nós a ser visitado
+
+                    for (var newNode in node.getNeighbors) {
+                        //se o vizinho n foi visitado
+                        if(!_.find(visited, { value: newNode.value})){
+                            //ele pode ser explorado
+                            possibleNodes.push(newNode);
+                            possibleLenght++;
+                        }
+                    }
+                    //Visita e aumenta o numero de nós visitados
+                    visited.push(node);
+                    visitedLenght++;
+                }
+                //zera o numero de nós a ser explorado, esse sera iniciado no inicio do while, passando para a
+                //exploração do proximo componente conexo
+                possibleNodes.length = 0;
+                possibleLenght = 0;
+            }
+            return numberOfRelatedComponents;
+        }
     }
 
     /**
