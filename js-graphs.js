@@ -403,18 +403,88 @@ export class Graphs {
      * @memberof Graphs
      */
     isEurelian() {
-        const visited = [];
+        let isEurelian = true;
+
+        if (this.numberOfRelatedComponents() > 1) return false;
 
         this.nodes.forEach((node) => {
-            const neighbords = this.getNeighbors(node);
-            if (this.getDegree(node) % 2 != 0) return null;
-
-            neighbords.forEach((neighbor) => {
-                neighbor.from = node.value;
-                visited.push(neighbor);
-            });
+            if (this.getDegree(node) % 2 != 0) {
+                isEurelian = false;
+                return;
+            }
         });
 
+        return isEurelian;
+    }
+
+    /**
+     * @public
+     * Retorna um circuito euleriano pelo algoritmo de Hieholzer
+     * @returns {Array} Circuito fechado
+     * @memberof Graphs
+     */
+    eurelianCircuit() {
+        const initialEdges = this._copy(this.edges);
+        const initialNodes = this._copy(this.nodes);
+
+        const visited = [],
+            visitedNodes = [];
+        let initial = this.getNode("5");
+        let end = false;
+
+        if (!this.isEurelian()) return null;
+
+        const _createClosedCircuit = (node) => {
+            if (end) return;
+            visitedNodes.push(node);
+            const neighbords = this.getNeighbors(node);
+            neighbords.forEach((neighbord) => {
+                if (end) return;
+                visitedNodes.push(neighbord);
+                let edge = this.getEdge(node.name, neighbord.name);
+                if (!edge) edge = this.getEdge(neighbord.name, node.name);
+                if (!edge) return;
+
+                visited.push(edge);
+                _.remove(this.edges, edge);
+
+                if (
+                    (edge.source.value == initial.value ||
+                        edge.target.value == initial.value) &&
+                    visited.length >= 2
+                ) {
+                    end = true;
+                    return;
+                } else {
+                    _createClosedCircuit(neighbord);
+                }
+            });
+            return;
+        };
+
+        _createClosedCircuit(initial);
+
+        while (visited.length != initialEdges.length) {
+            for (let i = 0; i < this.getOrder(); i++) {
+                if (this.getDegree(this.nodes[i]) == 0) {
+                    this.nodes.splice(i, 1);
+                    i--;
+                }
+            }
+
+            const intersection = _.intersectionBy(
+                visitedNodes,
+                this.nodes,
+                "value"
+            );
+
+            initial = intersection[0];
+            end = false;
+            _createClosedCircuit(initial);
+        }
+
+        this.edges = initialEdges;
+        this.nodes = initialNodes;
         return visited;
     }
 
