@@ -72,6 +72,13 @@ export class Graphs {
         return this.edges.length;
     }
 
+    /**
+     * @private
+     * Retorna a cópia do objeto passado
+     * @param {Object} obj objeto por parâmetro
+     * @returns {Object} cópia do mesmo objeto
+     * @memberof Graphs
+     */
     _copy(obj) {
         return JSON.parse(JSON.stringify(obj));
     }
@@ -148,14 +155,63 @@ export class Graphs {
         return true;
     }
 
-    //TODO PENSAR
-    widthSearch() {
-        return returnNode;
+    /**
+     * @public
+     * Realiza a busca em largura no grafo a partir do vertice
+     * @param {Node} node no do grafo
+     * @returns {Array} vertices visitados e seu numero
+     * @memberof Graphs
+     */
+    widthSearch(initial) {
+        const nodes = [];
+        let count = 1;
+
+        const _search = (node) => {
+            if (!_.find(nodes, { value: node.value })) {
+                node.index = count;
+                nodes.push(node);
+                count++;
+                this.getNeighbors(node).forEach((neighbor) => {
+                    _search(neighbor);
+                });
+            }
+        };
+
+        _search(initial);
+
+        return nodes;
     }
 
-    //TODO PENSAR
+    /**
+     * @public
+     * Realiza a busca em profundidade no grafo
+     * @returns {Array} vertices visitados e seu numero
+     * @memberof Graphs
+     */
     deepSearch() {
-        return returnNode;
+        const nodes = [],
+            initial = this.nodes[0];
+        let count = 1;
+
+        const _search = (node) => {
+            if (!_.find(nodes, { value: node.value })) {
+                node.index = count;
+                count++;
+                nodes.push(node);
+                this.getNeighbors(node).forEach((neighbor) => {
+                    _search(neighbor);
+                });
+            }
+        };
+
+        _search(initial);
+
+        while (nodes.length != this.nodes.length) {
+            const notVisited = _.difference(this.nodes, nodes);
+            _search(notVisited[0]);
+        }
+
+        return nodes;
     }
 
     /**
@@ -221,6 +277,22 @@ export class Graphs {
      * @memberof Graphs
      */
     getMinimumGeneratingTree() {
+        const visited = [],
+            tree = [],
+            edges = this._copy(this.edges);
+
+        while (edges.length != 0) {
+            const min = _.minBy(edges, "value");
+            const index = _.findIndex(edges, min);
+            if (_.find(visited, min.source) && _.find(visited, min.target))
+                edges.splice(index, 1);
+            else {
+                visited.push(min.source, min.target);
+                tree.push(min);
+                edges.splice(index, 1);
+            }
+        }
+
         return tree;
     }
 
