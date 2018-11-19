@@ -33,11 +33,7 @@ export class Graphs {
      * @memberof Graphs
      */
     getNode(name) {
-        let found = null;
-        this.nodes.forEach((node) => {
-            if (node.name == name) found = node;
-        });
-        return found;
+        return _.find(this.nodes, { name });
     }
 
     /**
@@ -50,6 +46,21 @@ export class Graphs {
      */
     addEdge(source, target, value) {
         this.edges.push(new Edge(source, target, value));
+    }
+
+    /**
+     * @public
+     * Retorna uma aresta
+     * @param {String} source vertice fonte
+     * @param {String} target vertice destino
+     * @returns {Edge} aresta
+     * @memberof Graphs
+     */
+    getEdge(source, target) {
+        return _.find(this.edges, {
+            source: { name: source },
+            target: { name: target }
+        });
     }
 
     /**
@@ -109,6 +120,30 @@ export class Graphs {
 
     /**
      * @public
+     * Retorna os vizinhos de um vértice coloridos
+     * @param {Node} node vértice
+     * @returns {Array} vetor com os vértices vizinhos
+     * @memberof Graphs
+     */
+    getColorsNeighbors(node) {
+        const nodes = [];
+        if (!node) return nodes;
+
+        this.edges.forEach((edge) => {
+            edge = this._copy(edge);
+            if (node.value == edge.source.value) {
+                edge.target.edgeValue = edge.value;
+                nodes.push(this.getNode(edge.target.name));
+            } else if (node.value == edge.target.value) {
+                edge.source.edgeValue = edge.value;
+                nodes.push(this.getNode(edge.source.name));
+            }
+        });
+        return nodes;
+    }
+
+    /**
+     * @public
      * Retorna o grau do vértice passado
      * @param {Node} node vértice
      * @returns {Number} valor do grau
@@ -130,7 +165,47 @@ export class Graphs {
      * @memberof Graphs
      */
     isSplit() {
-        return true;
+        const initialNodes = this._copy(this.nodes);
+        let isSplit = true;
+
+        this.nodes = this.nodes.map((node) => {
+            return {
+                name: node.name,
+                value: node.value,
+                color: -1
+            };
+        });
+
+        const _dfsColor = (node, color) => {
+            let result = true;
+            node.color = color;
+            this.getColorsNeighbors(node).forEach((neighbor) => {
+                if (neighbor.color == -1) {
+                    if (!_dfsColor(neighbor, 1 - color)) {
+                        result = false;
+                        return;
+                    }
+                } else {
+                    if (neighbor.color == color) {
+                        result = false;
+                        return;
+                    }
+                }
+            });
+            return result;
+        };
+
+        this.nodes.forEach((node) => {
+            if (node.color == -1) {
+                if (!_dfsColor(this._copy(node), 0)) {
+                    isSplit = false;
+                    return;
+                }
+            }
+        });
+
+        this.nodes = initialNodes;
+        return isSplit;
     }
 
     /**
@@ -141,7 +216,23 @@ export class Graphs {
      * @memberof Graphs
      */
     isArticulation(node) {
-        return true;
+        let relatedComponents = this.numberOfRelatedComponents(),
+            isArticulation = false;
+
+        const nodes = this._copy(this.nodes),
+            edges = this._copy(this.edges);
+
+        _.remove(this.nodes, { value: node.value });
+        _.remove(this.edges, { source: { value: node.value } });
+        _.remove(this.edges, { target: { value: node.value } });
+
+        if (relatedComponents != this.numberOfRelatedComponents())
+            isArticulation = true;
+
+        this.nodes = nodes;
+        this.edges = edges;
+
+        return isArticulation;
     }
 
     /**
@@ -152,7 +243,19 @@ export class Graphs {
      * @memberof Graphs
      */
     isBridge(edge) {
-        return true;
+        let relatedComponents = this.numberOfRelatedComponents(),
+            isBridge = false;
+
+        const edges = this._copy(this.edges);
+
+        _.remove(this.edges, edge);
+
+        if (relatedComponents != this.numberOfRelatedComponents())
+            isBridge = true;
+
+        this.edges = edges;
+
+        return isBridge;
     }
 
     /**
@@ -164,13 +267,10 @@ export class Graphs {
      */
     widthSearch(initial) {
         const nodes = [];
-        let count = 1;
 
         const _search = (node) => {
             if (!_.find(nodes, { value: node.value })) {
-                node.index = count;
                 nodes.push(node);
-                count++;
                 this.getNeighbors(node).forEach((neighbor) => {
                     _search(neighbor);
                 });
@@ -189,26 +289,14 @@ export class Graphs {
      * @memberof Graphs
      */
     deepSearch() {
-        const nodes = [],
-            initial = this.nodes[0];
-        let count = 1;
+        let nodes = [];
+        const initial = this.nodes[0];
 
-        const _search = (node) => {
-            if (!_.find(nodes, { value: node.value })) {
-                node.index = count;
-                count++;
-                nodes.push(node);
-                this.getNeighbors(node).forEach((neighbor) => {
-                    _search(neighbor);
-                });
-            }
-        };
-
-        _search(initial);
+        nodes = nodes.concat(this.widthSearch(initial));
 
         while (nodes.length != this.nodes.length) {
-            const notVisited = _.difference(this.nodes, nodes);
-            _search(notVisited[0]);
+            const notVisited = _.differenceBy(this.nodes, nodes, "value");
+            nodes = nodes.concat(this.widthSearch(notVisited[0]));
         }
 
         return nodes;
@@ -221,7 +309,19 @@ export class Graphs {
      * @memberof Graphs
      */
     numberOfRelatedComponents() {
-        return 1;
+        const initial = this.nodes[0];
+        let nodes = [],
+            count = 1;
+
+        nodes = nodes.concat(this.widthSearch(initial));
+
+        while (nodes.length != this.nodes.length) {
+            count++;
+            const notVisited = _.differenceBy(this.nodes, nodes, "value");
+            nodes = nodes.concat(this.widthSearch(notVisited[0]));
+        }
+
+        return count;
     }
 
     /**
