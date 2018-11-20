@@ -398,7 +398,16 @@ export class Graphs {
                 edges.splice(index, 1);
             }
         }
+        //Texto a ser escrito no arquivo
 
+        var str;
+
+        str += "tamanho da arvore : ", tree.lenght;
+        tree.forEach((edge) =>{
+            str += (edge.source, edge.target, edge.value);
+        });
+
+        
         return tree;
     }
 
