@@ -338,6 +338,12 @@ export class Graphs {
 
         const _search = (src) => {
             let neighbords = this.getNeighbors(src);
+            neighbords.forEach((node) => {
+                if(node.value == target.value){
+                    path.path.push(node);
+                    path.value += node.edgeValue;
+                }
+            });
 
             neighbords = neighbords.filter(
                 (neighbor) => !_.find(visited, { value: neighbor.value })
