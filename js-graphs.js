@@ -340,6 +340,12 @@ export class Graphs {
 
         const _search = (src) => {
             let neighbords = this.getNeighbors(src);
+            neighbords.forEach((node) => {
+                if (node.value == target.value) {
+                    path.path.push(node);
+                    path.value += node.edgeValue;
+                }
+            });
 
             neighbords = neighbords.filter(
                 (neighbor) => !_.find(visited, { value: neighbor.value })
@@ -421,6 +427,14 @@ export class Graphs {
                 edges.splice(index, 1);
             }
         }
+        //Texto a ser escrito no arquivo
+
+        var str;
+
+        (str += "tamanho da arvore : "), tree.lenght;
+        tree.forEach((edge) => {
+            str += (edge.source, edge.target, edge.value);
+        });
 
         this._writeTree(tree, "/private/arvores/arvore.txt");
 
