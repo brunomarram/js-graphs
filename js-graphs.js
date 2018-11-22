@@ -2,6 +2,8 @@ import { Edge } from "./classes/Edge";
 import { Node } from "./classes/Node";
 import { _ } from "lodash";
 
+const fs = require("fs");
+
 export class Graphs {
     /**
      * Creates an instance of Graphs.
@@ -371,6 +373,33 @@ export class Graphs {
     }
 
     /**
+     * @private
+     * Escreve a árvore no arquivo de saída
+     * @param {Array} tree arvore
+     * @param {String} fileName caminho do arquivo
+     * @memberof Graphs
+     */
+    _writeTree(tree, fileName) {
+        let file = tree.length + "\n";
+        let weight = 0;
+        tree.forEach((edge) => {
+            file +=
+                edge.source.name +
+                " " +
+                edge.target.name +
+                " " +
+                edge.value +
+                "\n";
+            weight += edge.value;
+        });
+        file += weight;
+
+        fs.writeFile(process.env["PWD"] + fileName, file, (err) => {
+            if (err) throw err;
+        });
+    }
+
+    /**
      * @public
      * Retorna a árvore geradora mínima do grafo
      * @returns {Array} com a árvore geradora
@@ -392,6 +421,8 @@ export class Graphs {
                 edges.splice(index, 1);
             }
         }
+
+        this._writeTree(tree, "/private/arvores/arvore.txt");
 
         return tree;
     }
